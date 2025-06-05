@@ -13,10 +13,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Bot extends TelegramLongPollingBot {
 
     private static final String TOKEN = TokenClass.TOKEN;
+
+    private final ExecutorService executorService;
 
 
     KeyboardButton spin = KeyboardButton.builder()
@@ -32,26 +36,29 @@ public class Bot extends TelegramLongPollingBot {
 
     public Bot() {
         super(TOKEN);
+        this.executorService = Executors.newFixedThreadPool(20);
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-        Message message = update.getMessage();
-        Long who = message.getFrom().getId();
-        String what = message.getText();
-        if (message.isCommand()){
-            if (what.equals("/start")) {
-                onStart(who);
+        executorService.execute(() -> {
+            Message message = update.getMessage();
+            Long who = message.getFrom().getId();
+            String what = message.getText();
+            if (message.isCommand()){
+                if (what.equals("/start")) {
+                    onStart(who);
+                }
+            } else if (what.equals("Крутить")){
+                System.out.print(message.getFrom().getUserName());
+                spinRoulette(who);
             }
-        } else if (what.equals("Крутить")){
-            System.out.print(message.getFrom().getUserName());
-            spinRoulette(who);
-        }
+        });
     }
 
     @Override
     public String getBotUsername() {
-        return "MIREA Casino";
+        return "MIREA Casino Test";
     }
 
     public void onStart(Long who){
@@ -69,57 +76,61 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     public void spinRoulette(Long who){
-        ReplyKeyboardRemove remove = ReplyKeyboardRemove.builder().removeKeyboard(true).build();
-        SendDice sticker = SendDice.builder()
-                .chatId(who)
-                .emoji("\uD83C\uDFB0")
-                .replyMarkup(remove)
-                .build();
-        try {
-            Message resultMessage = execute(sticker);
-            int value = resultMessage.getDice().getValue();
-            String message;
-            switch (value){
-                case 1:
-                    message = "Поздравляем! Коэфициент вашей победы: 1";
-                    break;
-                case 22:
-                    message = "Поздравляем! Коэфициент вашей победы: 2";
-                    break;
-                case 43:
-                    message = "Поздравляем! Коэфициент вашей победы: 3";
-                    break;
-                case 64:
-                    message = "Поздравляем! Коэфициент вашей победы: 4";
-                    break;
-                default:
-                    message = "Повезет в следующий раз! Додеп и крути!";
-            }
-            System.out.println(" " + value + " " +message);
+        executorService.execute(() -> {
+            ReplyKeyboardRemove remove = ReplyKeyboardRemove.builder().removeKeyboard(true).build();
+            SendDice sticker = SendDice.builder()
+                    .chatId(who)
+                    .emoji("\uD83C\uDFB0")
+                    .replyMarkup(remove)
+                    .build();
             try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
+                Message resultMessage = execute(sticker);
+                int value = resultMessage.getDice().getValue();
+                String message;
+                switch (value){
+                    case 1:
+                        message = "Поздравляем! Коэфициент вашей победы: 1";
+                        break;
+                    case 22:
+                        message = "Поздравляем! Коэфициент вашей победы: 2";
+                        break;
+                    case 43:
+                        message = "Поздравляем! Коэфициент вашей победы: 3";
+                        break;
+                    case 64:
+                        message = "Поздравляем! Коэфициент вашей победы: 4";
+                        break;
+                    default:
+                        message = "Повезет в следующий раз! Додеп и крути!";
+                }
+                System.out.println(" " + value + " " +message);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                sendMessage(who, message);
+
+            } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
             }
-            sendMessage(who, message);
-
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public void sendMessage(Long who, String what){
-        SendMessage message = SendMessage.builder()
-                .text(what)
-                .chatId(who)
-                .replyMarkup(keyboard)
-                .build();
+        executorService.execute(() -> {
+            SendMessage message = SendMessage.builder()
+                    .text(what)
+                    .chatId(who)
+                    .replyMarkup(keyboard)
+                    .build();
 
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
+            try {
+                execute(message);
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
 }
