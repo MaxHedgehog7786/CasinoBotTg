@@ -10,7 +10,10 @@ target/
 .idea/libraries/
 .idea/*
 out/*
-src/main/java/org.example/Data
+/src/main/java/org/example/Data/*
+/src/main/resources/*
+/src/test/*
+.gitignore
 *.iws
 *.iml
 *.ipr
