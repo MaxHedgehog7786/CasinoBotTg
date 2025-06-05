@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.Data.TokenClass;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendDice;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
