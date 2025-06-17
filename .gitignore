@@ -17,6 +17,7 @@ out/*
 *.iws
 *.iml
 *.ipr
+/src/main/java/org/example/data/*
 
 ### Eclipse ###
 .apt_generated
